@@ -58,8 +58,8 @@ export default function ChallengeCard({ exercise, competitionId }: Props) {
           <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded font-mono font-bold border border-blue-500/20">
             {exercise.points} PTS
           </span>
-          <span className={`text-xs px-2 py-1 rounded font-bold uppercase tracking-wider border ${exercise.difficulty === 'Easy' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-              exercise.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+          <span className={`text-xs px-2 py-1 rounded font-bold uppercase tracking-wider border ${exercise.difficulty === 'facil' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+              exercise.difficulty === 'medio' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
                 'bg-red-500/10 text-red-500 border-red-500/20'
             }`}>
             {exercise.difficulty}

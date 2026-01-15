@@ -19,8 +19,6 @@ export default function CompetitionArenaPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Tenta buscar os dados. Se o usuário não estiver inscrito,
-        // o backend deve retornar 403 ou 404 (dependendo da sua implementação)
         const [compRes, exRes] = await Promise.all([
           api.get<Competition>(`/competitions/${competitionId}`),
           api.get<Exercise[]>(`/competitions/${competitionId}/exercises`)

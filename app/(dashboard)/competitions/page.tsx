@@ -11,8 +11,6 @@ export default function CompetitionsListPage() {
 	const [loading, setLoading] = useState(true);
 	const [joining, setJoining] = useState(false);
 
-	// Busca APENAS as competições que o usuário participa
-	// (Assumindo que o endpoint GET /competitions/ retorna o contexto do usuário logado)
 	const fetchCompetitions = async () => {
 		try {
 			const res = await api.get<Competition[]>('/competitions/');
@@ -34,10 +32,8 @@ export default function CompetitionsListPage() {
 		setJoining(true);
 
 		try {
-			// Endpoint para entrar: POST /competitions/join
 			await api.post('/competitions/join', { invite_code: inviteCode });
 
-			// Limpa e recarrega a lista
 			setInviteCode('');
 			await fetchCompetitions();
 			alert('Inscrição confirmada com sucesso!');

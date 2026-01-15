@@ -8,7 +8,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>; // Adicionado a tipagem do logout
+  logout: () => Promise<void>;
+  updateUser: (updatedData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -35,8 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await api.post('/auth/login', { email, password });
-    await checkUser(); // Atualiza o usuário após login
-    router.push('/dashboard'); // Redireciona para o Dashboard
+    await checkUser();
+    router.push('/dashboard');
   };
 
   const logout = async () => {
@@ -50,8 +51,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUser = (updatedData: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updatedData } : null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

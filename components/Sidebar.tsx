@@ -9,6 +9,7 @@ const navItems = [
   { name: 'Competições', href: '/competitions', icon: Trophy },
   // { name: 'Arena (Exercícios)', href: '/exercises', icon: Sword },
   { name: 'Scoreboard', href: '/scoreboard', icon: BarChart3 },
+  { name: 'Perfil', href: '/profile', icon: UserIcon },
 ];
 
 export default function Sidebar() {

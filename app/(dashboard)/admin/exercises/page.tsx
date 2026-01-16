@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Exercise, Tag } from '@/lib/types';
-import { Trash2, Plus, Terminal, X, Pencil, Link as LinkIcon } from 'lucide-react';
+import { Trash2, Plus, Terminal, X, Pencil, Link as LinkIcon, Rocket, Loader2 } from 'lucide-react';
 
 // Imports dos componentes modularizados
 import TagManager from '@/components/admin/TagManager';
@@ -16,6 +16,7 @@ export default function AdminExercisesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [linkModalExerciseId, setLinkModalExerciseId] = useState<string | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [isDeploying, setIsDeploying] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +24,7 @@ export default function AdminExercisesPage() {
     difficulty: 'facil',
     points: 100,
     flag: '',
+    docker_image: '', // Campo para a Solução 3 (GHCR)
     is_active: true
   });
 
@@ -42,17 +44,20 @@ export default function AdminExercisesPage() {
   useEffect(() => { fetchData(); }, []);
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', difficulty: 'facil', points: 100, flag: '', is_active: true });
+    setFormData({
+      name: '',
+      description: '',
+      difficulty: 'facil',
+      points: 100,
+      flag: '',
+      docker_image: '',
+      is_active: true
+    });
     setSelectedTagIds([]);
     setEditingId(null);
     setShowForm(false);
   };
 
-  /**
-   * Lógica de Vincular/Desvincular Tag
-   * Se estiver editando, faz a chamada de API imediata.
-   * Se estiver criando, apenas gerencia o estado local para enviar no submit.
-   */
   const handleToggleTag = async (tagId: string, isLinked: boolean) => {
     if (editingId) {
       try {
@@ -61,11 +66,10 @@ export default function AdminExercisesPage() {
         } else {
           await api.post(`/exercises/${editingId}/tags/${tagId}`);
         }
-        // Atualiza a lista local para refletir no formulário
         setSelectedTagIds(prev =>
           isLinked ? prev.filter(id => id !== tagId) : [...prev, tagId]
         );
-        fetchData(); // Recarrega para atualizar a lista de exercícios (coluna de tags)
+        fetchData();
       } catch (err) {
         alert("Erro ao processar vínculo da tag.");
       }
@@ -92,7 +96,6 @@ export default function AdminExercisesPage() {
         res = await api.post('/exercises/', payload);
         const newExId = res.data.id;
 
-        // Vincula as tags selecionadas ao novo exercício criado
         for (const tagId of selectedTagIds) {
           await api.post(`/exercises/${newExId}/tags/${tagId}`);
         }
@@ -102,6 +105,25 @@ export default function AdminExercisesPage() {
       fetchData();
     } catch (err) {
       alert("Erro ao salvar os dados.");
+    }
+  };
+
+  // --- NOVA LÓGICA DE DEPLOY ---
+  const handleDeploy = async (exId: string) => {
+    const compId = prompt("Para qual Competition UUID deseja fazer o deploy?");
+    if (!compId) return;
+
+    setIsDeploying(exId);
+    try {
+      // Chama a nova rota de deploy que criamos no Backend
+      const res = await api.post(`exercises/${exId}/deploy/${compId}`);
+      alert(`Deploy realizado com sucesso!\nURL: ${res.data.connection}`);
+    } catch (err: any) {
+      const errorDetail = err.response?.data?.detail || "Erro desconhecido no deploy.";
+      alert(`Falha no deploy: ${errorDetail}`);
+    } finally {
+      setIsDeploying(null);
+      fetchData();
     }
   };
 
@@ -123,7 +145,7 @@ export default function AdminExercisesPage() {
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Terminal className="text-red-600" size={32} /> Biblioteca de Desafios
           </h1>
-          <p className="text-neutral-400 mt-1">Gestão centralizada de exercícios, flags e categorias.</p>
+          <p className="text-neutral-400 mt-1">Gestão centralizada de exercícios e infraestrutura Docker.</p>
         </div>
         <button
           onClick={() => { resetForm(); setShowForm(!showForm); }}
@@ -134,10 +156,8 @@ export default function AdminExercisesPage() {
         </button>
       </div>
 
-      {/* Gerenciador Global de Tags (CRUD de Tags) */}
       <TagManager tags={tags} onFetch={fetchData} />
 
-      {/* Formulário com Seleção de Tags incluída */}
       {showForm && (
         <ExerciseForm
           editingId={editingId}
@@ -158,7 +178,7 @@ export default function AdminExercisesPage() {
             <tr className="bg-neutral-950 border-b border-neutral-800 text-xs text-neutral-500 uppercase tracking-widest">
               <th className="p-5">Exercício</th>
               <th className="p-5">Dificuldade</th>
-              <th className="p-5">Tags</th>
+              <th className="p-5">Imagem Docker</th>
               <th className="p-5">Pontos</th>
               <th className="p-5 text-right">Ações</th>
             </tr>
@@ -171,25 +191,34 @@ export default function AdminExercisesPage() {
                   <div className="text-[10px] text-neutral-600 font-mono mt-1">{ex.id}</div>
                 </td>
                 <td className="p-5">
-                  <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border ${ex.difficulty === 'fácil' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
-                      ex.difficulty === 'médio' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' :
+                  <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border ${ex.difficulty.toLowerCase() === 'facil' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
+                      ex.difficulty.toLowerCase() === 'medio' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' :
                         'border-red-500/30 text-red-500 bg-red-500/5'
                     }`}>
                     {ex.difficulty}
                   </span>
                 </td>
                 <td className="p-5">
-                  <div className="flex flex-wrap gap-1 max-w-[200px]">
-                    {ex.tags?.map((t) => (
-                      <span key={t.id} className="text-[9px] bg-neutral-950 text-neutral-400 px-1.5 py-0.5 rounded border border-neutral-800">
-                        {t.name}
-                      </span>
-                    ))}
+                  <div className="text-[10px] font-mono text-neutral-500 max-w-[150px] truncate" title={ex.docker_image}>
+                    {ex.docker_image || '---'}
                   </div>
                 </td>
                 <td className="p-5 font-mono text-red-400 font-bold">{ex.points}</td>
                 <td className="p-5 text-right">
                   <div className="flex justify-end gap-2">
+                    {/* BOTÃO DE DEPLOY (Foguete) */}
+                    <button
+                      onClick={() => handleDeploy(ex.id)}
+                      disabled={!ex.docker_image || isDeploying === ex.id}
+                      className={`p-2 rounded border transition ${isDeploying === ex.id
+                          ? 'bg-neutral-800 text-neutral-500'
+                          : 'bg-orange-600/10 text-orange-500 border-orange-600/20 hover:bg-orange-600 hover:text-white'
+                        } ${!ex.docker_image && 'opacity-30 cursor-not-allowed'}`}
+                      title="Subir Infraestrutura"
+                    >
+                      {isDeploying === ex.id ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />}
+                    </button>
+
                     <button
                       onClick={() => setLinkModalExerciseId(ex.id)}
                       className="p-2 bg-purple-600/10 text-purple-500 border border-purple-600/20 rounded hover:bg-purple-600 hover:text-white transition"
@@ -206,9 +235,9 @@ export default function AdminExercisesPage() {
                           difficulty: ex.difficulty,
                           points: ex.points,
                           flag: '',
+                          docker_image: ex.docker_image || '', // Carrega a imagem no editor
                           is_active: ex.is_active
                         });
-                        // Carrega os IDs das tags vinculadas para o formulário
                         setSelectedTagIds(ex.tags?.map(t => t.id) || []);
                         setShowForm(true);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -231,7 +260,6 @@ export default function AdminExercisesPage() {
         </table>
       </div>
 
-      {/* Modal de Vínculo de Competição */}
       <CompetitionLinkModal
         exerciseId={linkModalExerciseId}
         onClose={() => setLinkModalExerciseId(null)}

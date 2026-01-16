@@ -10,3 +10,8 @@ const api = axios.create({
 });
 
 export default api;
+
+export const deployExercise = async (exerciseId: string, competitionId: string) => {
+  const response = await api.post(`/exercises/${exerciseId}/deploy/${competitionId}`);
+  return response.data;
+};

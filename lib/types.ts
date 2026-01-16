@@ -27,8 +27,20 @@ export interface Exercise {
   description?: string;
   difficulty: string;
   points: number;
-  tags: Tag[];
+  flag: string;
   is_active: boolean;
+  docker_image?: string;
+  tags: Tag[];
+}
+
+export interface Container {
+  id: string;
+  exercises_id: string;
+  docker_id: string;
+  connection: string;
+  port: number;
+  is_active: boolean;
+  image_tag?: string;
 }
 
 export interface SolvePayload {

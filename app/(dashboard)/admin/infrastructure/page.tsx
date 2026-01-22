@@ -1,138 +1,216 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Container } from '@/lib/types';
-import { Server, Activity, Globe, Power, Trash2, Cpu, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Container, Exercise } from '@/lib/types'; // Importado Exercise para o mapeamento
+import {
+  Server, Activity, Trash2, RefreshCw,
+  Globe, Database, Skull, ShieldAlert,
+  Loader2
+} from 'lucide-react';
 
-export default function AdminInfrastructurePage() {
+export default function InfrastructurePage() {
   const [containers, setContainers] = useState<Container[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [exercises, setExercises] = useState<Exercise[]>([]); // Estado para nomes dos exercícios
+  const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
 
-  const fetchContainers = async () => {
-    setLoading(true);
+  const fetchData = async () => {
+    setIsLoading(true);
     try {
-      // Endpoint que lista todos os containers registados no sistema
-      const res = await api.get<Container[]>('/containers/');
-      setContainers(res.data || []);
+      // Busca containers e exercícios em paralelo para o mapeamento de nomes
+      const [contRes, exRes] = await Promise.all([
+        api.get<Container[]>('/containers/'),
+        api.get<Exercise[]>('/exercises/')
+      ]);
+      setContainers(contRes.data);
+      setExercises(exRes.data);
     } catch (err) {
-      console.error("Erro ao carregar infraestrutura:", err);
+      console.error("Erro ao listar infraestrutura:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchContainers(); }, []);
+  useEffect(() => { fetchData(); }, []);
+
+  // Helper para encontrar o nome do exercício pelo ID
+  const getExerciseName = (id: string) => {
+    return exercises.find(ex => ex.id === id)?.name || "Exercício Desconhecido";
+  };
+
+  const handleSync = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.post('/containers/sync');
+      alert(`Sincronização concluída! ${res.data.cleaned_up} registros órfãos removidos.`);
+      fetchData();
+    } catch (err) {
+      alert("Falha ao sincronizar infraestrutura.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleKillContainer = async (containerId: string) => {
-    if (!confirm("AVISO: Isto irá encerrar a instância do aluno e remover o container do Docker. Continuar?")) return;
+    if (!confirm("Deseja realmente interromper este container?")) return;
 
+    setIsActionLoading(containerId);
     try {
-      // Endpoint que remove o registo e interrompe o container
       await api.delete(`/containers/${containerId}`);
-      fetchContainers(); // Atualiza a lista
+      fetchData();
     } catch (err) {
-      alert("Erro ao encerrar container.");
+      alert("Falha ao remover container.");
+    } finally {
+      setIsActionLoading(null);
     }
   };
 
+  const handlePanicButton = async () => {
+    if (!confirm("AVISO: Isso irá derrubar TODA a infraestrutura ativa. Continuar?")) return;
+
+    setIsLoading(true);
+    try {
+      for (const container of containers) {
+        await api.delete(`/containers/${container.id}`);
+      }
+      alert("Comando de pânico executado.");
+      fetchData();
+    } catch (err) {
+      alert("Erro durante execução do pânico.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const activeCount = containers.filter(c => c.is_active).length;
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header com Stats Rápidas */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Server className="text-red-600" size={32} /> Monitoramento de Infra
+            <Server className="text-blue-500" size={32} /> Monitoramento de Infra
           </h1>
-          <p className="text-neutral-400 mt-1">Gestão de instâncias Docker em tempo real.</p>
+          <p className="text-neutral-400 mt-1">Status em tempo real dos containers e orquestração Docker.</p>
         </div>
-        <button
-          onClick={fetchContainers}
-          className="p-2 bg-neutral-800 text-neutral-400 rounded-lg hover:text-white transition border border-neutral-700"
-          title="Atualizar Estado"
-        >
-          <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-neutral-900 p-4 rounded-xl border border-neutral-800 flex items-center gap-4">
-          <div className="p-3 bg-green-500/10 rounded-lg text-green-500"><Activity size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold text-white">{containers.filter(c => c.is_active).length}</div>
-            <div className="text-xs text-neutral-500 uppercase font-bold">Instâncias Ativas</div>
-          </div>
-        </div>
-        <div className="bg-neutral-900 p-4 rounded-xl border border-neutral-800 flex items-center gap-4">
-          <div className="p-3 bg-red-500/10 rounded-lg text-red-600"><Cpu size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold text-white">{containers.length}</div>
-            <div className="text-xs text-neutral-500 uppercase font-bold">Total de Registos</div>
-          </div>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSync}
+            disabled={isLoading}
+            className="bg-blue-600/10 text-blue-500 border border-blue-600/20 px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-600 hover:text-white transition disabled:opacity-50"
+          >
+            <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+            Sincronizar
+          </button>
+          <button
+            onClick={handlePanicButton}
+            className="bg-red-600/10 text-red-500 border border-red-600/20 px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-red-600 hover:text-white transition"
+          >
+            <Skull size={18} /> Pânico
+          </button>
         </div>
       </div>
 
-      {/* Tabela de Containers */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl">
+          <div className="flex justify-between items-start mb-4">
+            <Activity className="text-green-500" size={24} />
+            <span className="text-[10px] text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full uppercase font-bold">Online</span>
+          </div>
+          <div className="text-3xl font-bold text-white">{activeCount}</div>
+          <div className="text-neutral-500 text-sm">Containers Ativos</div>
+        </div>
+
+        <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl">
+          <div className="flex justify-between items-start mb-4">
+            <Database className="text-blue-500" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">{containers.length}</div>
+          <div className="text-neutral-500 text-sm">Registros no Banco</div>
+        </div>
+
+        <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl">
+          <div className="flex justify-between items-start mb-4">
+            <ShieldAlert className="text-orange-500" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">
+            {containers.length - activeCount}
+          </div>
+          <div className="text-neutral-500 text-sm">Inativos / Pendentes</div>
+        </div>
+      </div>
+
+      {/* Main Table */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-xl">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-neutral-950 border-b border-neutral-800 text-xs text-neutral-500 uppercase tracking-widest">
-              <th className="p-5">Docker ID / Imagem</th>
-              <th className="p-5">Exercício ID</th>
-              <th className="p-5">Endereço de Conexão</th>
+              <th className="p-5">Desafio</th>
+              <th className="p-5">Docker ID</th>
+              <th className="p-5">Conexão</th>
               <th className="p-5">Status</th>
               <th className="p-5 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800">
-            {containers.length === 0 ? (
+            {isLoading && containers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-10 text-center text-neutral-500">
+                  <Loader2 size={32} className="animate-spin mx-auto mb-2 text-blue-500" />
+                  Carregando infraestrutura...
+                </td>
+              </tr>
+            ) : containers.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-10 text-center text-neutral-500 italic">
-                  Nenhum container ativo ou registado no momento.
+                  Nenhum container registrado.
                 </td>
               </tr>
             ) : (
-              containers.map((c) => (
-                <tr key={c.id} className="hover:bg-neutral-800/30 transition group">
+              containers.map((container) => (
+                <tr key={container.id} className="hover:bg-neutral-800/30 transition">
                   <td className="p-5">
-                    <div className="font-mono text-sm text-red-500 font-bold">{c.docker_id?.slice(0, 12) || 'N/A'}</div>
-                    <div className="text-[10px] text-neutral-500 mt-1">{c.image_tag}</div>
-                  </td>
-                  <td className="p-5 text-xs text-neutral-400 font-mono">
-                    {c.exercises_id}
+                    {/* Alterado para mostrar o Nome em vez do ID */}
+                    <div className="font-bold text-white">{getExerciseName(container.exercises_id)}</div>
+                    <div className="text-[10px] text-neutral-600 font-mono">{container.exercises_id}</div>
                   </td>
                   <td className="p-5">
-                    <div className="flex items-center gap-2 text-sm text-neutral-300 bg-black px-3 py-1 rounded border border-neutral-800 w-fit">
-                      <Globe size={14} className="text-blue-500" /> {c.connection}:{c.port}
+                    <code className="text-[10px] bg-neutral-950 px-2 py-1 rounded text-blue-400 border border-blue-900/30 font-mono">
+                      {container.docker_id.substring(0, 12)}
+                    </code>
+                  </td>
+                  <td className="p-5">
+                    <div className="flex items-center gap-2 text-neutral-400 text-sm font-mono">
+                      <Globe size={14} className="text-neutral-600" />
+                      {/* Corrigido para não duplicar a porta na URL */}
+                      {container.connection}
                     </div>
                   </td>
                   <td className="p-5">
-                    <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border flex items-center gap-1 w-fit ${c.is_active ? 'border-green-500/30 text-green-500 bg-green-500/5' : 'border-neutral-700 text-neutral-600 bg-neutral-800'
-                      }`}>
-                      <Power size={10} />
-                      {c.is_active ? 'Rodando' : 'Offline'}
+                    <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase ${container.is_active ? 'text-green-500' : 'text-neutral-500'}`}>
+                      <span className={`w-2 h-2 rounded-full ${container.is_active ? 'bg-green-500 animate-pulse' : 'bg-neutral-700'}`} />
+                      {container.is_active ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
                   <td className="p-5 text-right">
-                    <button
-                      onClick={() => handleKillContainer(c.id)}
-                      className="p-2 bg-red-600/10 text-red-500 border border-red-600/20 rounded hover:bg-red-600 hover:text-white transition"
-                      title="Kill Instance"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => handleKillContainer(container.id)}
+                        disabled={isActionLoading === container.id}
+                        className="p-2 bg-red-600/10 text-red-500 border border-red-600/20 rounded hover:bg-red-600 hover:text-white transition disabled:opacity-30"
+                        title="Derrubar Container"
+                      >
+                        {isActionLoading === container.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="bg-red-900/10 border border-red-900/20 p-4 rounded-xl flex gap-3 items-start text-red-500/80">
-        <AlertTriangle className="shrink-0" size={20} />
-        <p className="text-xs italic leading-relaxed">
-          <strong>Aviso de Infraestrutura:</strong> O encerramento (Kill) remove o container do host Docker e limpa o registo no Interpreter. Utilize esta função para limpar containers zumbis ou instâncias abusivas.
-        </p>
       </div>
     </div>
   );

@@ -30,6 +30,7 @@ export interface Exercise {
   flag: string;
   is_active: boolean;
   docker_image?: string;
+  time_alive?: number;
   tags: Tag[];
 }
 

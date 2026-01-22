@@ -49,7 +49,7 @@ export default function AdminDashboard() {
 				<AdminCard
 					title="Infraestrutura"
 					desc="Monitorar containers Docker ativos."
-					href="/admin/containers"
+					href="/admin/infrastructure"
 					icon={Box}
 				/>
 			</div>

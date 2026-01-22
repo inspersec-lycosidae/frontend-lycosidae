@@ -21,10 +21,10 @@ export default function AdminExercisesPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    difficulty: 'facil',
+    difficulty: 'fácil',
     points: 100,
     flag: '',
-    docker_image: '', // Campo para a Solução 3 (GHCR)
+    docker_image: '',
     is_active: true
   });
 
@@ -47,7 +47,7 @@ export default function AdminExercisesPage() {
     setFormData({
       name: '',
       description: '',
-      difficulty: 'facil',
+      difficulty: 'fácil',
       points: 100,
       flag: '',
       docker_image: '',
@@ -109,14 +109,16 @@ export default function AdminExercisesPage() {
   };
 
   // --- NOVA LÓGICA DE DEPLOY ---
-  const handleDeploy = async (exId: string) => {
-    const compId = prompt("Para qual Competition UUID deseja fazer o deploy?");
-    if (!compId) return;
+  const handleDeploy = async (ex_id: string) => {
+    const timeAlive = prompt("Por quanto tempo (minutos) o container deve ficar ativo? (0 para infinito)", "60");
+    if (timeAlive === null) return;
 
-    setIsDeploying(exId);
+    setIsDeploying(ex_id);
     try {
-      // Chama a nova rota de deploy que criamos no Backend
-      const res = await api.post(`exercises/${exId}/deploy/${compId}`);
+      const res = await api.post(`/exercises/${ex_id}/deploy`, {
+        time_alive: parseInt(timeAlive) || 0
+      });
+
       alert(`Deploy realizado com sucesso!\nURL: ${res.data.connection}`);
     } catch (err: any) {
       const errorDetail = err.response?.data?.detail || "Erro desconhecido no deploy.";
@@ -191,9 +193,9 @@ export default function AdminExercisesPage() {
                   <div className="text-[10px] text-neutral-600 font-mono mt-1">{ex.id}</div>
                 </td>
                 <td className="p-5">
-                  <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border ${ex.difficulty.toLowerCase() === 'facil' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
-                      ex.difficulty.toLowerCase() === 'medio' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' :
-                        'border-red-500/30 text-red-500 bg-red-500/5'
+                  <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border ${ex.difficulty.toLowerCase() === 'fácil' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
+                    ex.difficulty.toLowerCase() === 'médio' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' :
+                      'border-red-500/30 text-red-500 bg-red-500/5'
                     }`}>
                     {ex.difficulty}
                   </span>
@@ -211,8 +213,8 @@ export default function AdminExercisesPage() {
                       onClick={() => handleDeploy(ex.id)}
                       disabled={!ex.docker_image || isDeploying === ex.id}
                       className={`p-2 rounded border transition ${isDeploying === ex.id
-                          ? 'bg-neutral-800 text-neutral-500'
-                          : 'bg-orange-600/10 text-orange-500 border-orange-600/20 hover:bg-orange-600 hover:text-white'
+                        ? 'bg-neutral-800 text-neutral-500'
+                        : 'bg-orange-600/10 text-orange-500 border-orange-600/20 hover:bg-orange-600 hover:text-white'
                         } ${!ex.docker_image && 'opacity-30 cursor-not-allowed'}`}
                       title="Subir Infraestrutura"
                     >

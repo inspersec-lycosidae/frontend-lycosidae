@@ -2,72 +2,75 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import Link from 'next/link';
-import { Trophy, Users, Box, Terminal, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Trophy, Users, Box, Terminal, ShieldAlert } from 'lucide-react';
+import GradientDivider from '@/components/ui/GradientDivider';
+import AdminCard from '@/components/admin/AdminCard';
 
 export default function AdminDashboard() {
-	const { user, loading } = useAuth();
-	const router = useRouter();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-	// Proteção de Rota (Redireciona se não for admin)
-	useEffect(() => {
-		if (!loading && (!user || !user.is_admin)) {
-			router.push('/dashboard');
-		}
-	}, [user, loading, router]);
+  useEffect(() => {
+    if (!loading && (!user || !user.is_admin)) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
 
-	if (loading || !user?.is_admin) return null;
+  if (loading || !user?.is_admin) return null;
 
-	return (
-		<div className="space-y-8 animate-in fade-in duration-500">
-			<div>
-				<h1 className="text-3xl font-bold text-white flex items-center gap-3">
-					<ShieldAlert className="text-red-500" size={32} /> Painel de Controle
-				</h1>
-				<p className="text-neutral-400">Gerenciamento global da plataforma Lycosidae.</p>
-			</div>
+  return (
+    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700">
+      <header className="relative">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldAlert size={16} className="text-red-600" />
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-[0.3em]">Acesso Nível: Alpha-01</p>
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight uppercase leading-none">
+              CENTRO DE <span className="text-red-600">COMANDO</span>
+            </h1>
+            <p className="text-neutral-500 text-sm mt-2">Gerenciamento global e supervisão tática da rede Horus.</p>
+          </div>
+          <div className="hidden lg:block text-right font-mono text-[10px] text-neutral-700 uppercase">
+            <p>Faça um bom trabalho,</p>
+            <p>Administrador {user.username}!</p>
+          </div>
+        </div>
+      </header>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				<AdminCard
-					title="Competições"
-					desc="Criar, editar e encerrar CTFs e salas de aula."
-					href="/admin/competitions"
-					icon={Trophy}
-				/>
-				<AdminCard
-					title="Exercícios"
-					desc="Gerenciar biblioteca global de desafios."
-					href="/admin/exercises"
-					icon={Terminal}
-				/>
-				<AdminCard
-					title="Usuários"
-					desc="Listar alunos e verificar acessos."
-					href="/admin/users"
-					icon={Users}
-				/>
-				<AdminCard
-					title="Infraestrutura"
-					desc="Monitorar containers Docker ativos."
-					href="/admin/infrastructure"
-					icon={Box}
-				/>
-			</div>
-		</div>
-	);
-}
+      <GradientDivider />
 
-function AdminCard({ title, desc, href, icon: Icon }: any) {
-	return (
-		<Link href={href} className="group bg-neutral-900 border border-neutral-800 p-6 rounded-xl hover:border-red-600/50 hover:bg-neutral-800/80 transition-all">
-			<div className="flex justify-between items-start mb-4">
-				<div className="p-3 bg-red-900/10 text-red-500 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
-					<Icon size={24} />
-				</div>
-				<ArrowRight className="text-neutral-600 group-hover:text-white transition-colors opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0" />
-			</div>
-			<h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-			<p className="text-neutral-400 text-sm">{desc}</p>
-		</Link>
-	);
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <AdminCard
+          title="Operações"
+          desc="Criar, editar e supervisionar aulas e competições."
+          href="/admin/competitions"
+          icon={Trophy}
+          tag="OPE-ADM"
+        />
+        <AdminCard
+          title="Exercícios"
+          desc="Gerenciar biblioteca global de exercícios e tags."
+          href="/admin/exercises"
+          icon={Terminal}
+          tag="EXE-ADM"
+        />
+        <AdminCard
+          title="Operadores"
+          desc="Monitorar acesso e histórico de todos os usuários."
+          href="/admin/users"
+          icon={Users}
+          tag="USER-ADM"
+        />
+        <AdminCard
+          title="Infraestrutura"
+          desc="Controle total sobre containers e instâncias."
+          href="/admin/infrastructure"
+          icon={Box}
+          tag="INFRA-ADM"
+        />
+      </div>
+    </div>
+  );
 }

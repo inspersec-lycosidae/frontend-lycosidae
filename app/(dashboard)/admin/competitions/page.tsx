@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Competition } from '@/lib/types';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Terminal, ShieldAlert } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import CompetitionForm from '@/components/admin/CompetitionForm';
 import CompetitionTable from '@/components/admin/CompetitionTable';
 import ViewExercisesModal from '@/components/admin/ViewExercisesModal';
+import GradientDivider from '@/components/ui/GradientDivider';
 
 export default function AdminCompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -25,9 +27,20 @@ export default function AdminCompetitionsPage() {
   const fetchCompetitions = async () => {
     try {
       const res = await api.get<Competition[]>('/competitions/');
-      setCompetitions(res.data);
+      
+      // Ordenação Tática: Ativas > Em Breve > Finalizadas
+      const sorted = [...res.data].sort((a, b) => {
+        const priority: Record<string, number> = { ativa: 0, 'em breve': 1, finalizada: 2 };
+        const pA = priority[a.status] ?? 3;
+        const pB = priority[b.status] ?? 3;
+        
+        if (pA !== pB) return pA - pB;
+        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+      });
+
+      setCompetitions(sorted);
     } catch (err) {
-      console.error("Erro ao buscar competições:", err);
+      toast.error("Falha ao sincronizar banco de operações.");
     }
   };
 
@@ -38,9 +51,7 @@ export default function AdminCompetitionsPage() {
   const handleEditClick = (comp: Competition) => {
     const formatForInput = (isoString: string) => {
       if (!isoString) return '';
-      const utcString = isoString.endsWith('Z') ? isoString : `${isoString}Z`;
-      const date = new Date(utcString);
-      
+      const date = new Date(isoString);
       const offset = date.getTimezoneOffset() * 60000;
       const localDate = new Date(date.getTime() - offset);
       return localDate.toISOString().slice(0, 16);
@@ -65,12 +76,13 @@ export default function AdminCompetitionsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza? Isso pode afetar os placares e desvincular exercícios.')) return;
+    if (!confirm('AVISO: Esta ação neutralizará a operação e todos os dados vinculados. Prosseguir?')) return;
     try {
       await api.delete(`/competitions/${id}`);
+      toast.success("Operação neutralizada com sucesso.");
       fetchCompetitions();
     } catch (err) {
-      alert('Erro ao deletar competição.');
+      toast.error('Erro ao encerrar operação no servidor.');
     }
   };
 
@@ -86,33 +98,45 @@ export default function AdminCompetitionsPage() {
 
       if (editingId) {
         await api.patch(`/competitions/${editingId}`, payload);
-        alert('Competição atualizada!');
+        toast.success('Dossiê da operação atualizado.');
       } else {
         payload.invite_code = formData.invite_code;
         await api.post('/competitions/', payload);
-        alert('Competição criada com sucesso!');
+        toast.success('Nova missão inicializada com sucesso.');
       }
 
       resetForm();
       fetchCompetitions();
     } catch (err: any) {
-      alert('Erro: ' + (err.response?.data?.detail || 'Verifique os dados enviados'));
+      toast.error(err.response?.data?.detail || 'Verifique os parâmetros da missão.');
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700">
+      {/* Header Tático */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Gerenciar Eventos</h1>
-          <p className="text-neutral-400 text-sm mt-1">Administre salas de aula e CTFs.</p>
+          <div className="flex items-center gap-2 mb-2">
+            <Terminal size={16} className="text-red-600" />
+            <p className="text-[10px] font-bold text-red-500 uppercase tracking-[0.3em]">Gestão de Ativos</p>
+          </div>
+          <h1 className="text-4xl font-black text-white tracking-tight uppercase leading-none">
+            GESTOR DE <span className="text-red-600">OPERAÇÕES</span>
+          </h1>
+          <p className="text-neutral-500 text-sm mt-2">Administre as operações ativas, finalizadas e futuras.</p>
         </div>
+        
         <button
           onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="bg-red-600 hover:bg-red-500 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all"
+          className={`px-6 py-3 rounded-xl font-black text-[11px] tracking-widest flex items-center gap-2 transition-all shadow-lg ${
+            showForm 
+              ? 'bg-neutral-800 text-white hover:bg-neutral-700' 
+              : 'bg-red-600 text-white hover:bg-red-500 shadow-red-900/20'
+          }`}
         >
-          {showForm ? <X size={20} /> : <Plus size={20} />}
-          {showForm ? 'Fechar Painel' : 'Nova Competição'}
+          {showForm ? <X size={18} /> : <Plus size={18} />}
+          {showForm ? 'ABORTAR AÇÃO' : 'INICIAR NOVA OPERAÇÃO'}
         </button>
       </div>
 
@@ -125,6 +149,8 @@ export default function AdminCompetitionsPage() {
           onCancel={resetForm}
         />
       )}
+
+      <GradientDivider />
 
       <CompetitionTable
         competitions={competitions}

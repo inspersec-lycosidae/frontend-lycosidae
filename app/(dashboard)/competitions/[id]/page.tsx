@@ -4,15 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Exercise, Competition } from '@/lib/types';
 import ChallengeCard from '@/components/ChallengeCard';
-import {
-  Calendar,
-  Flag,
-  ChevronLeft,
-  AlertTriangle,
-  Loader2,
-  Trophy,
-  CheckCircle
-} from 'lucide-react';
+import { Calendar, Flag, ChevronLeft, AlertTriangle, Loader2, Trophy, CheckCircle } from 'lucide-react';
 
 export default function CompetitionArenaPage() {
   const params = useParams();
@@ -34,21 +26,17 @@ export default function CompetitionArenaPage() {
         api.get<any[]>(`/exercises/my-solves`)
       ]);
 
-      // Normalização do ID da competição atual para comparação segura
       const currentCompId = String(competitionId).trim().toLowerCase();
 
-      // FILTRO ESTRITO: Apenas resoluções que pertencem a ESTA competição
       const solvedInThisComp = solveRes.data.filter((solve: any) => {
         const solveCompId = String(solve.competitions_id || '').trim().toLowerCase();
         return solveCompId === currentCompId;
       });
 
-      // Extraímos os IDs dos exercícios resolvidos NESTA competição
       const solvedExerciseIds = solvedInThisComp.map((s: any) =>
         String(s.exercises_id).trim().toLowerCase()
       );
 
-      // SOMA DE PONTOS: Baseado no campo points_awarded do solve (Source of Truth)
       const score = solvedInThisComp.reduce((acc: number, solve: any) => acc + (solve.points_awarded || 0), 0);
 
       setCompetition(compRes.data);
@@ -94,7 +82,7 @@ export default function CompetitionArenaPage() {
       </button>
 
       <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-2xl relative overflow-hidden flex flex-col lg:flex-row justify-between lg:items-center gap-8 shadow-2xl">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-900/10 to-transparent pointer-events-none" />
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-red-900/10 to-transparent pointer-events-none" />
 
         <div className="relative z-10 space-y-4">
           <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tight">{competition.name}</h1>
@@ -132,7 +120,6 @@ export default function CompetitionArenaPage() {
             key={ex.id}
             exercise={ex}
             competitionId={competitionId}
-            // Comparação de ID normalizada para o estado visual
             isSolved={solvedIds.includes(String(ex.id).trim().toLowerCase())}
             activeConnection={ex.connection}
             onRefresh={loadData}

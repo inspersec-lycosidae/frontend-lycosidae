@@ -1,6 +1,8 @@
 'use client';
 import { Pencil, Plus, Save, ShieldCheck, Tag as TagIcon, Terminal } from 'lucide-react';
 import { Tag } from '@/lib/types';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 interface ExerciseFormProps {
   editingId: string | null;
@@ -14,40 +16,40 @@ interface ExerciseFormProps {
 }
 
 export default function ExerciseForm({
-  editingId,
-  formData,
-  setFormData,
-  onSubmit,
-  onCancel,
-  allTags,
-  selectedTags,
-  onToggleTag
+  editingId, formData, setFormData, onSubmit, onCancel, allTags, selectedTags, onToggleTag
 }: ExerciseFormProps) {
   return (
-    <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-xl border-l-4 border-l-red-600 shadow-2xl animate-in slide-in-from-top-4">
-      <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-        {editingId ? <Pencil size={22} className="text-blue-500" /> : <Plus size={22} className="text-green-500" />}
-        {editingId ? 'Editar Desafio' : 'Cadastrar Novo Desafio'}
-      </h2>
-      <form onSubmit={onSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-2xl relative overflow-hidden shadow-2xl animate-in slide-in-from-top-4 duration-500">
+      <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
 
-          {/* Nome do Desafio */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2.5 bg-red-950/20 border border-red-900/30 rounded-lg text-red-600">
+          {editingId ? <Pencil size={20} /> : <Plus size={20} />}
+        </div>
+        <div>
+          <h3 className="text-xl font-black text-white uppercase tracking-tight">
+            {editingId ? 'Ajustar exercício' : 'Registrar novo exercício'}
+          </h3>
+          <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-[0.2em]">Especificações do Dossiê</p>
+        </div>
+      </div>
+
+      <form onSubmit={onSubmit} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-2">Nome</label>
-            <input
-              type="text" required
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition"
+            <Input
+              label="Nome do Desafio"
+              required
               value={formData.name || ''}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
+              placeholder="SQLi"
             />
           </div>
 
-          {/* Dificuldade */}
-          <div>
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-2">Dificuldade</label>
+          <div className="space-y-1">
+            <label className="block text-[10px] text-neutral-500 uppercase font-black tracking-widest ml-1 mb-1">Dificuldade</label>
             <select
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition"
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3.5 text-white focus:border-red-600 outline-none transition-all uppercase text-[11px] font-bold cursor-pointer"
               value={formData.difficulty || 'facil'}
               onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
             >
@@ -57,105 +59,79 @@ export default function ExerciseForm({
             </select>
           </div>
 
-          {/* Descrição */}
-          <div className="md:col-span-3">
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-2">Descrição (Markdown)</label>
+          <div className="md:col-span-3 space-y-1">
+            <label className="block text-[10px] text-neutral-500 uppercase font-black tracking-widest ml-1 mb-1">Descrição (Markdown)</label>
             <textarea
               rows={4} required
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition font-mono text-sm"
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-white focus:border-red-600 outline-none transition font-mono text-sm placeholder-neutral-800"
+              placeholder="Descreva as vulnerabilidades e objetivos..."
               value={formData.description || ''}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
 
-          {/* Pontos */}
-          <div className="md:col-span-1">
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-2">Pontos</label>
-            <input
-              type="number" required
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition"
-              value={formData.points || 0}
-              onChange={e => setFormData({ ...formData, points: Number(e.target.value) })}
-            />
-          </div>
+          <Input
+            label="Pontuação"
+            type="number"
+            required
+            value={formData.points || 0}
+            onChange={e => setFormData({ ...formData, points: Number(e.target.value) })}
+          />
 
-          {/* Imagem Docker (GHCR) - Implementação Solução 3 */}
           <div className="md:col-span-2">
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-2 flex items-center gap-2">
-              <Terminal size={14} className="text-blue-500" /> Imagem Docker (GHCR)
-            </label>
-            <input
-              type="text"
-              placeholder="ghcr.io/inspersec-lycosidae/welcome-web:latest"
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition font-mono text-sm"
+            <Input
+              label="Imagem Docker (GHCR)"
+              placeholder="ghcr.io/inspersec-lycosidae/exercises-lycosidae/welcome-web:latest"
               value={formData.docker_image || ''}
               onChange={e => setFormData({ ...formData, docker_image: e.target.value })}
             />
-            <p className="mt-1 text-[10px] text-neutral-500 italic">
-              A porta interna será detectada automaticamente via Label "lycosidae.port".
-            </p>
           </div>
 
-          {/* Flag do Sistema */}
           <div className="md:col-span-3">
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-2 flex items-center gap-2">
-              <ShieldCheck size={14} className="text-red-600" /> Flag do Sistema {editingId && <span className="text-[10px] lowercase text-neutral-500">(Vazio para manter atual)</span>}
-            </label>
-            <input
-              type="text" placeholder="lycos{...}"
+            <Input
+              label={`Flag ${editingId ? '(Vazio para manter atual)' : ''}`}
+              placeholder="HORUS{flag_aqui}"
               required={!editingId}
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition font-mono"
               value={formData.flag || ''}
               onChange={e => setFormData({ ...formData, flag: e.target.value })}
             />
           </div>
 
-          {/* Lógica das TAGS */}
-          <div className="md:col-span-3">
-            <label className="block text-xs text-neutral-500 uppercase font-bold mb-3 flex items-center gap-2">
-              <TagIcon size={14} /> Vincular Categorias
+          <div className="md:col-span-3 space-y-3">
+            <label className="text-[10px] text-neutral-500 uppercase font-black tracking-widest ml-1 flex items-center gap-2">
+              <TagIcon size={12} /> Categorias
             </label>
-            <div className="flex flex-wrap gap-2 p-4 bg-neutral-950 border border-neutral-800 rounded-xl">
-              {allTags.length === 0 ? (
-                <span className="text-xs text-neutral-600 italic">Nenhuma tag disponível.</span>
-              ) : (
-                allTags.map((tag) => {
-                  const isSelected = selectedTags.includes(tag.id);
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => onToggleTag(tag.id, isSelected)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${isSelected
-                        ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-900/40'
-                        : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-300'
-                        }`}
-                    >
-                      {isSelected ? <ShieldCheck size={12} /> : <Plus size={12} />}
-                      {tag.name}
-                    </button>
-                  );
-                })
-              )}
+            <div className="flex flex-wrap gap-2 p-5 bg-neutral-950/50 border border-neutral-800 rounded-xl">
+              {allTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id} type="button"
+                    onClick={() => onToggleTag(tag.id, isSelected)}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${isSelected
+                      ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-900/20'
+                      : 'bg-neutral-900 border-neutral-800 text-neutral-500 hover:border-neutral-700 hover:text-neutral-300'
+                      }`}
+                  >
+                    {isSelected ? <ShieldCheck size={12} /> : <Plus size={12} />}
+                    {tag.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Botões de Ação */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-neutral-800">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-2 text-neutral-400 hover:text-white transition font-bold"
-          >
-            Cancelar
+        <div className="flex justify-end gap-4 pt-6 border-t border-neutral-800/50">
+          <button type="button" onClick={onCancel} className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-white transition">
+            ABORTAR
           </button>
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-500 text-white px-8 py-2 rounded-lg font-bold transition flex items-center gap-2"
-          >
-            <Save size={18} /> {editingId ? 'Salvar Alterações' : 'Publicar Desafio'}
-          </button>
+          <div className="w-64">
+            <Button type="submit">
+              <Save size={18} className="mr-2 inline" />
+              {editingId ? 'ATUALIZAR EXERCÍCIO' : 'PUBLICAR EXERCÍCIO'}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

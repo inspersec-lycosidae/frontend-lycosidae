@@ -1,54 +1,78 @@
-// components/admin/TagManager.tsx
 'use client';
 import { useState } from 'react';
 import api from '@/lib/api';
 import { Tag } from '@/lib/types';
 import { Plus, X, Tag as TagIcon, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function TagManager({ tags, onFetch }: { tags: Tag[], onFetch: () => void }) {
   const [newTagName, setNewTagName] = useState('');
   const [editingTag, setEditingTag] = useState<{ id: string, name: string } | null>(null);
 
   const handleCreateOrUpdate = async () => {
-    if (editingTag) {
-      await api.patch(`/tags/${editingTag.id}`, { name: editingTag.name });
-      setEditingTag(null);
-    } else {
-      if (!newTagName) return;
-      await api.post('/tags/', { name: newTagName });
-      setNewTagName('');
+    try {
+      if (editingTag) {
+        await api.patch(`/tags/${editingTag.id}`, { name: editingTag.name });
+        setEditingTag(null);
+        toast.success("Categoria atualizada.");
+      } else {
+        if (!newTagName) return;
+        await api.post('/tags/', { name: newTagName });
+        setNewTagName('');
+        toast.success("Nova categoria registrada.");
+      }
+      onFetch();
+    } catch (err) {
+      toast.error("Erro na operação de categoria.");
     }
-    onFetch();
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await api.delete(`/tags/${id}`);
+      toast.success("Categoria removida.");
+      onFetch();
+    } catch (err) {
+      toast.error("Falha ao remover categoria.");
+    }
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-2 text-neutral-500 text-xs font-bold uppercase mr-2">
-        <TagIcon size={14} /> Categorias:
+    <div className="bg-neutral-900/50 border border-neutral-800 p-5 rounded-2xl flex flex-wrap items-center gap-4 backdrop-blur-md">
+      <div className="flex items-center gap-2 text-[10px] font-black text-neutral-500 uppercase tracking-widest mr-2">
+        <TagIcon size={14} className="text-red-600" /> Categorias:
       </div>
+
       {tags.map(tag => (
-        <span key={tag.id} className="bg-neutral-800 text-neutral-300 px-3 py-1 rounded-full text-xs border border-neutral-700 flex items-center gap-2">
+        <span key={tag.id} className="bg-neutral-950 text-neutral-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-neutral-800 flex items-center gap-3 group">
           {editingTag?.id === tag.id ? (
             <input
-              autoFocus className="bg-transparent outline-none w-20"
+              autoFocus className="bg-transparent outline-none w-24 text-white"
               value={editingTag.name}
               onChange={e => setEditingTag({ ...editingTag, name: e.target.value })}
+              onKeyDown={e => e.key === 'Enter' && handleCreateOrUpdate()}
             />
           ) : (
-            <span onClick={() => setEditingTag(tag)} className="cursor-pointer hover:text-white transition">{tag.name}</span>
+            <span onClick={() => setEditingTag(tag)} className="cursor-pointer hover:text-red-500 transition-colors uppercase">{tag.name}</span>
           )}
-          <button onClick={async () => { await api.delete(`/tags/${tag.id}`); onFetch(); }} className="hover:text-red-500"><X size={12} /></button>
+          <button onClick={() => handleDelete(tag.id)} className="text-neutral-700 hover:text-red-500 transition-colors">
+            <X size={14} />
+          </button>
         </span>
       ))}
+
       <div className="flex gap-2 ml-auto">
         <input
-          placeholder={editingTag ? "Novo nome..." : "Nova Tag..."}
-          className="bg-black border border-neutral-700 rounded px-3 py-1 text-xs text-white outline-none focus:border-red-600"
+          placeholder={editingTag ? "Novo nome..." : "REGISTRAR TAG..."}
+          className="bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-[10px] font-black uppercase text-white outline-none focus:border-red-600 transition-all placeholder-neutral-800"
           value={editingTag ? editingTag.name : newTagName}
           onChange={e => editingTag ? setEditingTag({ ...editingTag, name: e.target.value }) : setNewTagName(e.target.value)}
         />
-        <button onClick={handleCreateOrUpdate} className="bg-neutral-800 hover:bg-neutral-700 p-1 rounded border border-neutral-700 text-white">
-          {editingTag ? <Check size={14} className="text-green-500" /> : <Plus size={14} />}
+        <button
+          onClick={handleCreateOrUpdate}
+          className="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white p-2 rounded-lg border border-red-600/20 transition-all"
+        >
+          {editingTag ? <Check size={18} /> : <Plus size={18} />}
         </button>
       </div>
     </div>

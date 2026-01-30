@@ -20,12 +20,12 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-neutral-900 border-r border-neutral-800 flex flex-col h-screen fixed left-0 top-0 z-50">
       <div className="p-6 flex justify-center items-center">
-        <Logo size="md" />
+        <Logo size="lg" />
       </div>
       <GradientDivider />
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        <p className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-widest mb-4">Principal</p>
+        <p className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-widest mb-2">Principal</p>
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href);
           return (
@@ -44,8 +44,9 @@ export default function Sidebar() {
         })}
 
         {user?.is_admin && (
-          <div className="pt-4 mt-4 border-t border-neutral-800">
-            <p className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-widest mb-2">Admin</p>
+          <div className='mt-4'>
+            <GradientDivider />
+            <p className="px-4 text-[10px] font-bold text-neutral-600 uppercase tracking-widest mb-2 mt-4">Admin</p>
             <Link
               href="/admin"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${pathname.startsWith('/admin')
@@ -54,7 +55,7 @@ export default function Sidebar() {
                 }`}
             >
               <ShieldAlert size={18} />
-              Painel Geral
+              Painel Administrativo
             </Link>
           </div>
         )}

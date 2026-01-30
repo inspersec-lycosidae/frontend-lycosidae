@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { Exercise, Competition, ScoreboardEntry } from '@/lib/types';
-import { Trophy, Target, Flag, Crosshair, Loader2, BarChart3 } from 'lucide-react';
+import { Trophy, Target, Flag, Loader2, BarChart3, Zap, ShieldCheck, Activity } from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
+import MissionProgress from '@/components/dashboard/MissionProgress';
+import GradientDivider from '@/components/ui/GradientDivider';
 
-// Tipagem para o log de atividades (SolveReadDTO mapeado)
 interface SolveActivity {
   id: string;
   timestamp: string;
@@ -32,23 +34,16 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
-
       try {
-        // Buscamos dados básicos, resolvidos e a lista total de exercícios
         const [compRes, solvesRes, allExercisesRes] = await Promise.all([
           api.get<Competition[]>('/competitions/'),
           api.get<any[]>('/exercises/my-solves'),
           api.get<Exercise[]>('/exercises/')
         ]);
 
-        const competitions = compRes.data;
         const mySolves = solvesRes.data;
         const allExercises = allExercisesRes.data;
-
-        // --- CORREÇÃO 1: Unicidade de Solves para Mastery ---
-        // Criamos um Set de IDs únicos para garantir que um exercício 
-        // em várias competições conte apenas uma vez no progresso.
-        const uniqueSolvedIds = new Set(mySolves.map(s => s.exercises_id));
+        const uniqueSolvedIds = new Set(mySolves.map((s: any) => s.exercises_id));
 
         const totalPerDifficulty = { fácil: 0, médio: 0, difícil: 0 };
         const solvedPerDifficulty = { fácil: 0, médio: 0, difícil: 0 };
@@ -57,29 +52,21 @@ export default function DashboardPage() {
           const diff = ex.difficulty?.toLowerCase() as keyof typeof totalPerDifficulty;
           if (totalPerDifficulty[diff] !== undefined) {
             totalPerDifficulty[diff]++;
-            // Se o ID deste exercício está no Set de únicos, incrementamos o resolvido
-            if (uniqueSolvedIds.has(ex.id)) {
-              solvedPerDifficulty[diff]++;
-            }
+            if (uniqueSolvedIds.has(ex.id)) solvedPerDifficulty[diff]++;
           }
         });
 
-        // --- CORREÇÃO 2: Ranking Global ---
-        // Alterado para buscar do endpoint de scoreboard global em vez de um ID específico.
         let userRank = '-';
         try {
           const globalSbRes = await api.get<ScoreboardEntry[]>('/scoreboard/global');
           const position = globalSbRes.data.findIndex(entry => entry.users_id === user.id);
           if (position !== -1) userRank = `#${position + 1}`;
-        } catch (e) {
-          console.warn("Ranking global não disponível. Verifique o endpoint /scoreboard/global");
-        }
+        } catch (e) { console.warn("Ranking global indisponível."); }
 
-        // Histórico formatado para exibição
         const activity = mySolves
-          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, 6)
-          .map(s => ({
+          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 5)
+          .map((s: any) => ({
             id: s.id,
             timestamp: s.timestamp,
             points_awarded: s.points_awarded,
@@ -88,9 +75,9 @@ export default function DashboardPage() {
 
         setRecentActivity(activity);
         setStats({
-          totalScore: mySolves.reduce((acc, s) => acc + (s.points_awarded || 0), 0),
-          totalSolves: uniqueSolvedIds.size, // Total de exercícios ÚNICOS capturados
-          enrolledCompetitions: competitions.length,
+          totalScore: mySolves.reduce((acc: number, s: any) => acc + (s.points_awarded || 0), 0),
+          totalSolves: uniqueSolvedIds.size,
+          enrolledCompetitions: compRes.data.length,
           rank: userRank,
           mastery: {
             fácil: { solved: solvedPerDifficulty.fácil, total: totalPerDifficulty.fácil },
@@ -98,95 +85,82 @@ export default function DashboardPage() {
             difícil: { solved: solvedPerDifficulty.difícil, total: totalPerDifficulty.difícil },
           }
         });
-
-      } catch (error) {
-        console.error("Erro no Dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error("Erro no Dashboard Horus:", error); }
+      finally { setLoading(false); }
     }
     fetchData();
   }, [user]);
 
   if (loading) return (
-    <div className="flex items-center justify-center h-[60vh]">
-      <Loader2 className="animate-spin text-red-500" size={32} />
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+      <Loader2 className="animate-spin text-red-600" size={40} />
+      <p className="text-xs font-bold text-neutral-500 uppercase tracking-[0.3em]">Sincronizando com Horus...</p>
     </div>
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700">
       <header>
-        <h1 className="text-3xl font-bold text-white">
-          Operador: <span className="text-red-500">{user?.username}</span>
-        </h1>
-        <p className="text-neutral-400 text-sm">Visão geral do sistema e performance tática.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse" />
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-[0.3em]">Status: Conexão Estável</p>
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight leading-none">
+              Bem-vindo, <span className="text-red-600">{user?.username}</span>
+            </h1>
+            <p className="text-neutral-500 text-sm mt-2">Painel de monitoramento e performance de campo.</p>
+          </div>
+        </div>
       </header>
 
-      {/* Grid de Stats */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Score Total" value={stats.totalScore} icon={Trophy} color="text-yellow-500" />
-        <StatCard title="Flags Únicas" value={stats.totalSolves} icon={Target} color="text-green-500" />
-        <StatCard title="Inscrições" value={stats.enrolledCompetitions} icon={Flag} color="text-blue-400" />
-        <StatCard title="Ranking Global" value={stats.rank} icon={BarChart3} color="text-red-500" isHighlight />
+      <GradientDivider />
+
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard label="Score Total" value={stats.totalScore} icon={Trophy} description="PTS" />
+        <StatCard label="Flags Únicas" value={stats.totalSolves} icon={Target} description="CAPTURAS" />
+        <StatCard label="Operações" value={stats.enrolledCompetitions} icon={Flag} description="INSCRITO" />
+        <StatCard label="Rank Global" value={stats.rank} icon={BarChart3} description="POSIÇÃO" />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Histórico/Log */}
-        <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-          <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-            <Crosshair size={14} /> Log de Resoluções
-          </h3>
-          <div className="space-y-3">
-            {recentActivity.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-neutral-800/20 border border-neutral-800">
-                <div>
-                  <p className="font-bold text-neutral-200">{item.exerciseName}</p>
-                  <p className="text-[10px] text-neutral-500 uppercase">{new Date(item.timestamp).toLocaleString('pt-BR')}</p>
+        <div className="lg:col-span-2 bg-neutral-900/30 border border-neutral-800/50 rounded-2xl overflow-hidden backdrop-blur-md">
+          <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Zap size={18} className="text-red-500" />
+              <h2 className="text-sm font-bold text-white uppercase tracking-widest">Logs de Resolução</h2>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            {recentActivity.length > 0 ? recentActivity.map((item) => (
+              <div key={item.id} className="flex items-center justify-between group p-3 rounded-xl hover:bg-neutral-800/30 transition-all border border-transparent hover:border-neutral-800">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-neutral-950 border border-neutral-800 flex items-center justify-center text-neutral-500 group-hover:text-red-500">
+                    <ShieldCheck size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white group-hover:text-red-500">{item.exerciseName}</p>
+                    <p className="text-[10px] text-neutral-500 uppercase font-mono">{new Date(item.timestamp).toLocaleString('pt-BR')}</p>
+                  </div>
                 </div>
-                <span className="text-green-500 font-mono font-bold">+{item.points_awarded} PTS</span>
+                <span className="text-sm font-black text-red-500 font-mono">+{item.points_awarded} XP</span>
               </div>
-            ))}
+            )) : <p className="text-center text-neutral-600 py-10 text-xs uppercase tracking-widest">Nenhuma atividade detectada.</p>}
           </div>
         </div>
 
-        {/* Maestria/Progresso Único */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-          <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest mb-6">Masteria de Conteúdo</h3>
+        <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <Activity size={18} className="text-red-500" />
+            <h2 className="text-sm font-bold text-white uppercase tracking-widest">Maestria Horus</h2>
+          </div>
           <div className="space-y-8">
-            <ProgressBar label="Fácil" solved={stats.mastery.fácil.solved} total={stats.mastery.fácil.total} color="bg-emerald-500" />
-            <ProgressBar label="Médio" solved={stats.mastery.médio.solved} total={stats.mastery.médio.total} color="bg-amber-500" />
-            <ProgressBar label="Difícil" solved={stats.mastery.difícil.solved} total={stats.mastery.difícil.total} color="bg-rose-500" />
+            <MissionProgress label="Fácil" solved={stats.mastery.fácil.solved} total={stats.mastery.fácil.total} color="bg-emerald-500" />
+            <MissionProgress label="Médio" solved={stats.mastery.médio.solved} total={stats.mastery.médio.total} color="bg-amber-500" />
+            <MissionProgress label="Difícil" solved={stats.mastery.difícil.solved} total={stats.mastery.difícil.total} color="bg-rose-500" />
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Subcomponentes para manter a organização
-function StatCard({ title, value, icon: Icon, color, isHighlight }: any) {
-  return (
-    <div className={`p-5 rounded-2xl bg-neutral-900 border ${isHighlight ? 'border-red-600/50' : 'border-neutral-800'}`}>
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{title}</span>
-        <Icon size={16} className={color} />
-      </div>
-      <div className="text-2xl font-bold text-white">{value}</div>
-    </div>
-  );
-}
-
-function ProgressBar({ label, solved, total, color }: { label: string, solved: number, total: number, color: string }) {
-  const percentage = total > 0 ? (solved / total) * 100 : 0;
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-[10px] font-bold uppercase">
-        <span className="text-neutral-400">{label}</span>
-        <span className="text-neutral-500">{solved}/{total}</span>
-      </div>
-      <div className="h-1.5 w-full bg-neutral-800 rounded-full">
-        <div className={`h-full ${color} transition-all duration-700`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export default function AdminExercisesPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    difficulty: 'fácil',
+    difficulty: 'facil',
     points: 100,
     flag: '',
     docker_image: '',
@@ -47,7 +47,7 @@ export default function AdminExercisesPage() {
     setFormData({
       name: '',
       description: '',
-      difficulty: 'fácil',
+      difficulty: 'facil',
       points: 100,
       flag: '',
       docker_image: '',
@@ -193,8 +193,8 @@ export default function AdminExercisesPage() {
                   <div className="text-[10px] text-neutral-600 font-mono mt-1">{ex.id}</div>
                 </td>
                 <td className="p-5">
-                  <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border ${ex.difficulty.toLowerCase() === 'fácil' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
-                    ex.difficulty.toLowerCase() === 'médio' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' :
+                  <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold border ${ex.difficulty.toLowerCase() === 'facil' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
+                    ex.difficulty.toLowerCase() === 'medio' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' :
                       'border-red-500/30 text-red-500 bg-red-500/5'
                     }`}>
                     {ex.difficulty}

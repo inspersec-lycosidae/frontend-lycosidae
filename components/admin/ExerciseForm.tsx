@@ -48,12 +48,12 @@ export default function ExerciseForm({
             <label className="block text-xs text-neutral-500 uppercase font-bold mb-2">Dificuldade</label>
             <select
               className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-3 text-white focus:border-red-600 outline-none transition"
-              value={formData.difficulty || 'fácil'}
+              value={formData.difficulty || 'facil'}
               onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
             >
-              <option value="fácil">Fácil</option>
-              <option value="médio">Médio</option>
-              <option value="difícil">Difícil</option>
+              <option value="facil">Fácil</option>
+              <option value="medio">Médio</option>
+              <option value="dificil">Difícil</option>
             </select>
           </div>
 

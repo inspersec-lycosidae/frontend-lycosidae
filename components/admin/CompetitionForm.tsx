@@ -54,7 +54,7 @@ export default function CompetitionForm({ editingId, formData, setFormData, onSu
             >
               <option value="ativa">Ativa</option>
               <option value="finalizada">Encerrada</option>
-              <option value="em breve">Em Breve</option>
+              <option value="em_breve">Em Breve</option>
             </select>
           </div>
 

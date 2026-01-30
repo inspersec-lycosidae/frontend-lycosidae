@@ -25,9 +25,9 @@ export default function DashboardPage() {
     enrolledCompetitions: 0,
     rank: '-',
     mastery: {
-      fácil: { solved: 0, total: 0 },
-      médio: { solved: 0, total: 0 },
-      difícil: { solved: 0, total: 0 },
+      facil: { solved: 0, total: 0 },
+      medio: { solved: 0, total: 0 },
+      dificil: { solved: 0, total: 0 },
     }
   });
 
@@ -45,8 +45,8 @@ export default function DashboardPage() {
         const allExercises = allExercisesRes.data;
         const uniqueSolvedIds = new Set(mySolves.map((s: any) => s.exercises_id));
 
-        const totalPerDifficulty = { fácil: 0, médio: 0, difícil: 0 };
-        const solvedPerDifficulty = { fácil: 0, médio: 0, difícil: 0 };
+        const totalPerDifficulty = { facil: 0, medio: 0, dificil: 0 };
+        const solvedPerDifficulty = { facil: 0, medio: 0, dificil: 0 };
 
         allExercises.forEach(ex => {
           const diff = ex.difficulty?.toLowerCase() as keyof typeof totalPerDifficulty;
@@ -80,9 +80,9 @@ export default function DashboardPage() {
           enrolledCompetitions: compRes.data.length,
           rank: userRank,
           mastery: {
-            fácil: { solved: solvedPerDifficulty.fácil, total: totalPerDifficulty.fácil },
-            médio: { solved: solvedPerDifficulty.médio, total: totalPerDifficulty.médio },
-            difícil: { solved: solvedPerDifficulty.difícil, total: totalPerDifficulty.difícil },
+            facil: { solved: solvedPerDifficulty.facil, total: totalPerDifficulty.facil },
+            medio: { solved: solvedPerDifficulty.medio, total: totalPerDifficulty.medio },
+            dificil: { solved: solvedPerDifficulty.dificil, total: totalPerDifficulty.dificil },
           }
         });
       } catch (error) { console.error("Erro no Dashboard Horus:", error); }
@@ -156,9 +156,9 @@ export default function DashboardPage() {
             <h2 className="text-sm font-bold text-white uppercase tracking-widest">Maestria Horus</h2>
           </div>
           <div className="space-y-8">
-            <MissionProgress label="Fácil" solved={stats.mastery.fácil.solved} total={stats.mastery.fácil.total} color="bg-emerald-500" />
-            <MissionProgress label="Médio" solved={stats.mastery.médio.solved} total={stats.mastery.médio.total} color="bg-amber-500" />
-            <MissionProgress label="Difícil" solved={stats.mastery.difícil.solved} total={stats.mastery.difícil.total} color="bg-rose-500" />
+            <MissionProgress label="Fácil" solved={stats.mastery.facil.solved} total={stats.mastery.facil.total} color="bg-emerald-500" />
+            <MissionProgress label="Médio" solved={stats.mastery.medio.solved} total={stats.mastery.medio.total} color="bg-amber-500" />
+            <MissionProgress label="Difícil" solved={stats.mastery.dificil.solved} total={stats.mastery.dificil.total} color="bg-rose-500" />
           </div>
         </div>
       </div>
